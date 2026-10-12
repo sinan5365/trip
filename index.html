@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f3a5f">
+<title>출장기록</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="출장기록">
+<style>
+:root{--bg:#f3f4f6;--card:#fff;--ink:#1d2330;--sub:#6b7280;--line:#e2e5ea;--pri:#1f3a5f;--acc:#2f7d5b;--warn:#b45309;--bad:#b91c1c;--soft:#eef2f7}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.45}
+header{position:sticky;top:0;z-index:20;background:var(--pri);color:#fff;padding:10px 12px;display:flex;align-items:center;gap:8px}
+header h1{font-size:17px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header button{background:transparent;border:1px solid rgba(255,255,255,.45);color:#fff;border-radius:8px;padding:6px 10px;font-size:14px}
+#sync{font-size:12px;padding:5px 14px;background:#e6edf5;color:var(--sub);position:sticky;top:48px;z-index:19}
+#sync.pend{background:#fff4e0;color:var(--warn)}#sync.err{background:#fde8e8;color:var(--bad)}#sync.ok{background:#e7f4ee;color:var(--acc)}
+main{padding:12px 12px 100px;max-width:760px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sp{flex:1}
+.sub{color:var(--sub);font-size:13px}
+.big{font-size:18px;font-weight:700}
+.badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--soft);color:var(--pri);font-weight:600}
+.b-live{background:#e7f4ee;color:var(--acc)}.b-done{background:#eceff3;color:var(--sub)}
+.b-visit{background:#e8eefb;color:#2b4fa3}.b-sales{background:#e7f4ee;color:#1f6b4b}.b-item{background:#f3ecfb;color:#6b3fa3}
+.b-expo{background:#fdf1e4;color:#9a5512}.b-expense{background:#fdeceb;color:#a33a2b}.b-note{background:#eef0f3;color:#475063}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--pri);color:#fff;border:0;border-radius:10px;padding:11px 16px;font-size:15px;font-weight:600}
+.btn.sec{background:#fff;color:var(--pri);border:1px solid var(--pri)}
+.btn.ghost{background:transparent;color:var(--sub);border:1px solid var(--line)}
+.btn.del{background:#fff;color:var(--bad);border:1px solid #f1c4c4}
+.btn.full{width:100%}
+.fab{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));background:var(--acc);color:#fff;border:0;border-radius:99px;padding:14px 22px;font-size:16px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);z-index:30}
+label{display:block;font-size:13px;color:var(--sub);margin:12px 0 4px}
+input,select,textarea{width:100%;font:inherit;font-size:16px;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+textarea{min-height:84px;resize:vertical}
+.money{display:flex;gap:6px}.money input{flex:1}.money select{width:96px}
+.chk{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:15px}.chk input{width:22px;height:22px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.types button{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 10px;font-size:16px;font-weight:600;color:var(--ink)}
+.day{font-weight:700;margin:18px 4px 8px;color:var(--pri)}
+.entry .kv{font-size:14px;margin-top:4px;white-space:pre-wrap;word-break:break-word}
+.entry .kv b{color:var(--sub);font-weight:500}
+.thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.thumbs .th{position:relative;width:76px;height:76px;border-radius:8px;overflow:hidden;background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--sub);text-align:center}
+.thumbs img{width:100%;height:100%;object-fit:cover}
+.thumbs .x{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border:0;border-radius:99px;width:22px;height:22px;font-size:13px;line-height:22px;padding:0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.stats div{background:var(--soft);border-radius:8px;padding:8px;text-align:center}
+.stats b{display:block;font-size:15px}.stats span{font-size:11px;color:var(--sub)}
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:50}
+#ov img{max-width:100%;max-height:100%}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;display:none;z-index:60;max-width:90%}
+.empty{text-align:center;color:var(--sub);padding:40px 10px}
+.rep h2{font-size:17px;border-bottom:2px solid var(--pri);padding-bottom:4px;margin:22px 0 8px}
+.rep h3{font-size:15px;margin:14px 0 6px}
+.rep table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:6px}
+.rep th,.rep td{border:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top;white-space:pre-wrap}
+.rep th{background:var(--soft);font-weight:600}
+.rep .num{text-align:right;white-space:nowrap}
+.tblwrap{overflow-x:auto}
+@media print{header,#sync,.fab,.noprint{display:none!important}body{background:#fff}main{padding:0;max-width:none}.card{border:0;padding:0}.tblwrap{overflow:visible}}
+</style>
+</head>
+<body>
+<header><button id="hBack" style="display:none" onclick="history.back()">←</button><h1 id="hTitle">출장기록</h1><button id="hRight" style="display:none"></button></header>
+<div id="sync"></div>
+<main id="app"></main>
+<div id="ov" onclick="this.style.display='none'"><img id="ovImg" alt=""></div>
+<div id="toast"></div>
+<script>
+'use strict';
+/* ===== 서버 주소 =====
+ * Apps Script 웹 앱 주소를 여기에 넣어 두면 직원은 주소 입력 없이 로그인만 하면 됩니다.
+ * 비워 두면 각 기기의 설정 화면에서 입력합니다. */
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbzLaUgl6o4DK44yjqabyLxCaAflBWKK-yQMv5LknSh0T31FjPblt1EmA7q_pUcU7uDLfg/exec';
+/* ===== 기본 유틸 ===== */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const pad=n=>String(n).padStart(2,'0');
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const nowTime=()=>{const d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes())};
+const won=n=>Math.round(n||0).toLocaleString('ko-KR')+'원';
+const num=v=>{const n=parseFloat(String(v??'').replace(/,/g,''));return isFinite(n)?n:0};
+const ago=t=>{if(!t)return '-';const m=Math.floor((Date.now()-t)/60000);if(m<1)return '방금';if(m<60)return m+'분 전';const h=Math.floor(m/60);if(h<24)return h+'시간 전';return Math.floor(h/24)+'일 전'};
+const WD=['일','월','화','수','목','금','토'];
+const dayLabel=d=>{const x=new Date(d+'T00:00:00');return isNaN(x)?d:d+' ('+WD[x.getDay()]+')'};
+function ld(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){toast('기기 저장 공간이 부족합니다');return false}}
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(()=>t.style.display='none',2600)}
+
+let cfg=ld('tr_cfg',{url:DEFAULT_URL,name:'',pin:'',role:''});
+if(!cfg.url&&DEFAULT_URL)cfg.url=DEFAULT_URL;
+let db=ld('tr_db',{trips:{},dirty:{},staff:[],lastSync:0,lastErr:''});
+const saveDb=()=>sv('tr_db',db), saveCfg=()=>sv('tr_cfg',cfg);
+const testMode=()=>!cfg.url;
+const isAdmin=()=>cfg.role==='admin'||testMode();
+const canEdit=t=>t&&t.staff===cfg.name;
+
+/* ===== 사진 저장소 (업로드 전 사진은 IndexedDB에 보관) ===== */
+const idb={d:null,
+ open(){return this.d?Promise.resolve(this.d):new Promise((res,rej)=>{const r=indexedDB.open('tr_photos',1);r.onupgradeneeded=()=>r.result.createObjectStore('p',{keyPath:'id'});r.onsuccess=()=>{this.d=r.result;res(this.d)};r.onerror=()=>rej(r.error)})},
+ async tx(mode,fn){const d=await this.open();return new Promise((res,rej)=>{const t=d.transaction('p',mode);const r=fn(t.objectStore('p'));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error)})},
+ put(o){return this.tx('readwrite',s=>s.put(o))},get(id){return this.tx('readonly',s=>s.get(id))},
+ del(id){return this.tx('readwrite',s=>s.delete(id))},all(){return this.tx('readonly',s=>s.getAll())}};
+function compress(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>{const img=new Image();img.onload=()=>{const M=1280;let w=img.width,h=img.height;if(Math.max(w,h)>M){const k=M/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k)}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);res(c.toDataURL('image/jpeg',0.72))};img.onerror=rej;img.src=fr.result};fr.onerror=rej;fr.readAsDataURL(file)})}
+const thumbUrl=fid=>'https://drive.google.com/thumbnail?id='+encodeURIComponent(fid)+'&sz=w1000';
+function photoHtml(ph,removable){
+ const x=removable?`<button class="x" type="button" onclick="event.stopPropagation();rmPhoto('${ph.id}')">×</button>`:'';
+ if(ph.fid)return `<div class="th" onclick="showImg('${thumbUrl(ph.fid)}')"><img loading="lazy" src="${thumbUrl(ph.fid)}" alt="">${x}</div>`;
+ if(ph.tmp)return `<div class="th" onclick="showImg(this.querySelector('img').src)"><img src="${ph.tmp}" alt="">${x}</div>`;
+ return `<div class="th" data-pid="${ph.id}" onclick="showImg(this.querySelector('img')&&this.querySelector('img').src)">업로드 대기${x}</div>`;
+}
+async function hydrate(){for(const el of document.querySelectorAll('[data-pid]')){try{const p=await idb.get(el.dataset.pid);if(p){const x=el.querySelector('.x');el.innerHTML=`<img src="${p.data}" alt="">`;if(x)el.appendChild(x)}}catch(e){}}}
+function showImg(src){if(!src)return;$('#ovImg').src=src;$('#ov').style.display='flex'}
+
+/* ===== 서버 통신 ===== */
+async function api(action,data){
+ const r=await fetch(cfg.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action,name:cfg.name,pin:cfg.pin},data||{}))});
+ const j=await r.json();if(!j.ok)throw new Error(j.error||'서버 오류');return j;
+}
+function markDirty(t){t.updatedAt=Date.now();db.trips[t.id]=t;db.dirty[t.id]=t.updatedAt;saveDb();updSync();setTimeout(sync,300)}
+let syncing=false;
+async function sync(){
+ if(testMode()||!cfg.name||syncing||!navigator.onLine){updSync();return}
+ syncing=true;updSync();let err='';
+ try{
+  for(const p of await idb.all()){
+   const t=db.trips[p.tripId];
+   if(!t){await idb.del(p.id);continue}
+   const r=await api('photo',{tripId:p.tripId,photoId:p.id,data:p.data.split(',')[1],mime:'image/jpeg'});
+   for(const e of t.entries)for(const ph of (e.photos||[]))if(ph.id===p.id)ph.fid=r.fid;
+   t.updatedAt=Date.now();db.dirty[t.id]=t.updatedAt;saveDb();await idb.del(p.id);
+  }
+  for(const id of Object.keys(db.dirty)){
+   const t=db.trips[id],stamp=db.dirty[id];
+   if(!t){delete db.dirty[id];continue}
+   await api('save',{trip:t});
+   if(db.dirty[id]===stamp)delete db.dirty[id];saveDb();
+  }
+  const r=await api('list');const ids=new Set();
+  for(const t of r.trips){ids.add(t.id);if(!db.dirty[t.id])db.trips[t.id]=t}
+  for(const id of Object.keys(db.trips))if(!ids.has(id)&&!db.dirty[id])delete db.trips[id];
+  db.lastSync=Date.now();
+ }catch(e){err=e.message||String(e)}
+ db.lastErr=err;saveDb();syncing=false;updSync();route(true);
+}
+async function updSync(){
+ const s=$('#sync');if(!cfg.name){s.style.display='none';return}s.style.display='block';
+ if(testMode()){s.className='pend';s.textContent='테스트 모드: 이 기기에만 저장됩니다 (설정에서 서버 주소 입력)';return}
+ let np=0;try{np=(await idb.all()).length}catch(e){}
+ const nd=Object.keys(db.dirty).length;
+ if(syncing){s.className='';s.textContent='동기화 중…';return}
+ if(!navigator.onLine){s.className='pend';s.textContent='오프라인: 기기에 저장됨 · 연결되면 자동 전송 (대기 '+(nd+np)+'건)';return}
+ if(db.lastErr){s.className='err';s.textContent='전송 실패: '+db.lastErr+' · 탭하여 재시도';s.onclick=sync;return}
+ if(nd+np){s.className='pend';s.textContent='전송 대기 '+(nd+np)+'건';return}
+ s.className='ok';s.textContent='본사 동기화 완료 · '+ago(db.lastSync);s.onclick=sync;
+}
+window.addEventListener('online',sync);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
+setInterval(()=>{if(!document.hidden)sync()},60000);
+
+/* ===== 기록 종류와 입력 항목 ===== */
+const SELECT_CHANCE=['상','중','하'];
+const TYPES={
+ visit:{label:'업체 방문',title:'company',fields:[
+  {k:'company',l:'업체명',req:1},{k:'contact',l:'담당자 · 연락처'},{k:'product',l:'주력 제품'},
+  {k:'talk',l:'논의 · 합의 내용',t:'ta'},{k:'open',l:'미결 사항',t:'ta'},{k:'chance',l:'거래 가능성',t:'sel',o:SELECT_CHANCE}]},
+ sales:{label:'영업 상담',title:'company',fields:[
+  {k:'company',l:'고객사',req:1},{k:'contact',l:'담당자 · 연락처'},{k:'isNew',l:'신규 거래처',t:'chk'},
+  {k:'talk',l:'상담 내용',t:'ta'},{k:'quote',l:'견적 금액',t:'money'},{k:'order',l:'수주 예상 금액',t:'money'},
+  {k:'chance',l:'수주 가능성',t:'sel',o:SELECT_CHANCE},{k:'next',l:'다음 조치'}]},
+ item:{label:'기계·부품',title:'name',fields:[
+  {k:'name',l:'품목',req:1},{k:'maker',l:'제조사 · 모델'},{k:'spec',l:'주요 사양',t:'ta'},{k:'price',l:'가격',t:'money'},
+  {k:'lead',l:'납기'},{k:'as',l:'A/S 조건'},{k:'process',l:'적용 공정'},{k:'prio',l:'도입 우선순위',t:'sel',o:['1','2','3']}]},
+ expo:{label:'전시회',title:'name',fields:[
+  {k:'name',l:'전시회명',req:1},{k:'comp',l:'경쟁사 제품 · 가격대',t:'ta'},{k:'tech',l:'신기술 · 트렌드',t:'ta'},
+  {k:'idea',l:'우리 제품에 응용할 아이디어',t:'ta'},{k:'cards',l:'확보한 명함 수',t:'num'}]},
+ expense:{label:'경비',title:'cat',fields:[
+  {k:'cat',l:'분류',t:'sel',o:['교통','숙박','식비·일비','입장료·참가비','통역·가이드','샘플·자료','통신·보험·기타'],req:1},
+  {k:'amt',l:'금액',t:'money',req:1},{k:'pay',l:'결제 수단',t:'sel',o:['법인카드','현금','개인카드']},{k:'memo',l:'내용'}]},
+ note:{label:'메모·배운 점',title:'kind',fields:[
+  {k:'kind',l:'구분',t:'sel',o:['메모','배운 점','후속 조치'],req:1},{k:'body',l:'내용',t:'ta',req:1},
+  {k:'owner',l:'담당자 (후속 조치)'},{k:'due',l:'기한 (후속 조치)',t:'date'}]}
+};
+const curOf=t=>t.type==='해외'&&t.currency?t.currency.toUpperCase():'';
+function toKRW(t,m){if(!m)return 0;const v=num(m.v);if(!m.c||m.c==='KRW')return v;return v*num(t.rate)}
+function moneyTxt(t,m){if(!m||m.v===''||m.v==null)return '';const v=num(m.v);if(!m.c||m.c==='KRW')return won(v);return v.toLocaleString('ko-KR')+' '+m.c+(num(t.rate)?' ('+won(v*num(t.rate))+')':'')}
+function fieldTxt(t,f,val){if(f.t==='money')return moneyTxt(t,val);if(f.t==='chk')return val?'예':'';return val??''}
+function entryTitle(e){const T=TYPES[e.type];const v=e.f[T.title];return T.fields.find(f=>f.k===T.title).t==='sel'?v:(v||'(제목 없음)')}
+function tripStats(t){let exp=0,order=0,newc=0;for(const e of t.entries||[]){if(e.type==='expense')exp+=toKRW(t,e.f.amt);if(e.type==='sales'){order+=toKRW(t,e.f.order);if(e.f.isNew)newc++}}return{exp,order,newc,n:(t.entries||[]).length}}
+
+/* ===== 화면 라우팅 ===== */
+function setHead(title,back,right){$('#hTitle').textContent=title;$('#hBack').style.display=back?'':'none';const r=$('#hRight');if(right){r.style.display='';r.textContent=right[0];r.onclick=right[1]}else r.style.display='none'}
+let formState=null;
+function route(soft){
+ const h=location.hash.slice(1)||'/';const p=h.split('/').filter(Boolean);
+ if(soft&&(p.includes('new')||p.includes('edit')||p[0]==='trip-new'||p[0]==='settings'))return; // 입력 중에는 다시 그리지 않음
+ if(!cfg.name)return renderLogin();
+ if(p[0]==='settings')return renderSettings();
+ if(p[0]==='trip-new')return renderTripForm(null);
+ if(p[0]==='trip'){const t=db.trips[p[1]];if(!t){location.hash='#/';return}
+  if(p[2]==='info')return renderTripForm(t);
+  if(p[2]==='report')return renderReport(t);
+  if(p[2]==='new')return p[3]?renderEntryForm(t,null,p[3]):renderTypePick(t);
+  if(p[2]==='edit')return renderEntryForm(t,(t.entries||[]).find(e=>e.id===p[3]));
+  return renderTrip(t)}
+ renderList();
+}
+window.addEventListener('hashchange',()=>route());
+
+/* ===== 로그인 / 설정 ===== */
+async function renderLogin(){
+ setHead('출장기록',false,['설정',()=>location.hash='#/settings']);updSync();
+ const a=$('#app');
+ if(testMode()){a.innerHTML=`<div class="card"><div class="big">테스트 모드</div><p class="sub">서버 주소가 없어서 이 기기에만 저장됩니다. 설정에서 Apps Script 주소를 입력하면 본사와 실시간 공유됩니다.</p>
+  <label>이름</label><input id="lgName" placeholder="이름"><div style="height:14px"></div><button class="btn full" onclick="doLogin()">시작</button></div>`;return}
+ a.innerHTML=`<div class="card"><div class="big">로그인</div><label>이름</label><select id="lgName"><option value="">불러오는 중…</option></select>
+  <label>PIN (4자리)</label><input id="lgPin" type="password" inputmode="numeric" maxlength="4" placeholder="●●●●">
+  <div style="height:14px"></div><button class="btn full" onclick="doLogin()">로그인</button></div>`;
+ const fill=list=>{$('#lgName').innerHTML='<option value="">선택하세요</option>'+list.map(s=>`<option>${esc(s.name)}</option>`).join('')};
+ if(db.staff.length)fill(db.staff);
+ try{const r=await api('staffList');db.staff=r.staff;saveDb();if($('#lgName'))fill(r.staff)}catch(e){if(!db.staff.length)toast('직원 목록을 불러오지 못했습니다: '+e.message)}
+}
+async function doLogin(){
+ const name=$('#lgName').value.trim();if(!name)return toast('이름을 선택하세요');
+ if(testMode()){cfg.name=name;cfg.role='admin';saveCfg();route();return}
+ const pin=$('#lgPin').value.trim();if(!/^\d{4}$/.test(pin))return toast('PIN 4자리를 입력하세요');
+ const old={name:cfg.name,pin:cfg.pin};cfg.name=name;cfg.pin=pin;
+ try{const r=await api('login');cfg.role=r.role;saveCfg();toast(name+'님 환영합니다');route();sync()}
+ catch(e){cfg.name=old.name;cfg.pin=old.pin;toast(e.message)}
+}
+function renderSettings(){
+ setHead('설정',true);
+ $('#app').innerHTML=`<div class="card"><div class="big">서버 연결</div><p class="sub">Apps Script 웹 앱 주소(https://script.google.com/macros/s/…/exec)를 붙여 넣으세요. 비워 두면 테스트 모드입니다.</p>
+  <input id="stUrl" value="${esc(cfg.url)}" placeholder="https://script.google.com/macros/s/.../exec">
+  <div style="height:12px"></div><button class="btn full" onclick="saveUrl()">저장</button></div>
+  ${cfg.name?`<div class="card"><div>${esc(cfg.name)} ${isAdmin()?'<span class="badge">대표</span>':''}</div><div style="height:10px"></div><button class="btn ghost full" onclick="logout()">로그아웃</button></div>`:''}`;
+}
+function saveUrl(){const u=$('#stUrl').value.trim();if(u&&!/^https:\/\/script\.google\.com\//.test(u))return toast('Apps Script 주소가 아닙니다');
+ if(u!==cfg.url){cfg={url:u,name:'',pin:'',role:''};db={trips:{},dirty:{},staff:[],lastSync:0,lastErr:''};saveDb()}saveCfg();toast('저장했습니다');location.hash='#/'}
+function logout(){if(Object.keys(db.dirty).length&&!confirm('아직 전송되지 않은 기록이 있습니다. 로그아웃하면 이 기기에서 지워집니다. 계속할까요?'))return;
+ cfg.name='';cfg.pin='';cfg.role='';saveCfg();db.trips={};db.dirty={};saveDb();location.hash='#/';route()}
+
+/* ===== 출장 목록 (대표는 전체 실시간 현황) ===== */
+function renderList(){
+ const admin=isAdmin();
+ setHead(admin?'출장 현황':'내 출장',false,['설정',()=>location.hash='#/settings']);updSync();
+ const trips=Object.values(db.trips).sort((a,b)=>(a.status==='완료')-(b.status==='완료')||(b.updatedAt||0)-(a.updatedAt||0));
+ const live=trips.filter(t=>t.status!=='완료');
+ let h='';
+ if(admin&&!testMode())h+=`<div class="card"><div class="row"><div class="sp"><div class="sub">진행 중 출장</div><div class="big">${live.length}건</div></div><button class="btn sec" onclick="sync()">새로고침</button></div><div class="sub" style="margin-top:6px">1분마다 자동 갱신됩니다.</div></div>`;
+ if(!trips.length)h+=`<div class="empty">아직 출장이 없습니다.<br>아래 버튼으로 새 출장을 만드세요.</div>`;
+ for(const t of trips){const s=tripStats(t);const last=(t.entries||[]).slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];
+  h+=`<div class="card" onclick="location.hash='#/trip/${t.id}'"><div class="row"><span class="badge ${t.status==='완료'?'b-done':'b-live'}">${t.status==='완료'?'완료':'진행 중'}</span><span class="badge">${esc(t.type)}</span><span class="sp"></span><span class="sub">${ago(t.updatedAt)}</span></div>
+  <div class="big" style="margin-top:6px">${esc(t.title)}</div><div class="sub">${esc(t.staff)} · ${esc(t.dest)} · ${esc(t.start)} ~ ${esc(t.end)}</div>
+  ${last?`<div class="sub" style="margin-top:6px">최근: [${TYPES[last.type].label}] ${esc(entryTitle(last))}</div>`:''}
+  <div class="stats"><div><b>${s.n}</b><span>기록</span></div><div><b>${won(s.exp)}</b><span>경비</span></div><div><b>${won(s.order)}</b><span>수주 예상</span></div></div></div>`}
+ $('#app').innerHTML=h+`<button class="fab" onclick="location.hash='#/trip-new'">+ 새 출장</button>`;
+}
+
+/* ===== 출장 정보 입력 ===== */
+function renderTripForm(t){
+ const e=!!t;t=t||{type:'국내',title:'',dest:'',start:today(),end:today(),purpose:'',goals:'',currency:'',rate:''};
+ if(e&&!canEdit(t))return renderTrip(t);
+ setHead(e?'출장 정보':'새 출장',true);
+ $('#app').innerHTML=`<div class="card">
+ <label>출장 구분</label><select id="tfType" onchange="$('#tfFx').style.display=this.value==='해외'?'':'none'"><option ${t.type==='국내'?'selected':''}>국내</option><option ${t.type==='해외'?'selected':''}>해외</option></select>
+ <label>출장명</label><input id="tfTitle" value="${esc(t.title)}" placeholder="예: 경북 사과농가 영업">
+ <label>지역 / 국가·도시</label><input id="tfDest" value="${esc(t.dest)}">
+ <div class="grid2"><div><label>시작일</label><input id="tfStart" type="date" value="${esc(t.start)}"></div><div><label>종료일</label><input id="tfEnd" type="date" value="${esc(t.end)}"></div></div>
+ <div id="tfFx" style="${t.type==='해외'?'':'display:none'}"><div class="grid2"><div><label>현지 통화 (예: USD)</label><input id="tfCur" value="${esc(t.currency)}" maxlength="5"></div><div><label>환율 (1단위 = 원)</label><input id="tfRate" inputmode="decimal" value="${esc(t.rate)}"></div></div></div>
+ <label>출장 목적</label><textarea id="tfPurpose">${esc(t.purpose)}</textarea>
+ <label>사전 목표 (한 줄에 하나)</label><textarea id="tfGoals" placeholder="예: 압출 절단기 2개 업체 견적 비교">${esc(t.goals)}</textarea>
+ <div style="height:16px"></div><button class="btn full" onclick="saveTrip('${e?t.id:''}')">저장</button>
+ ${e?`<div style="height:8px"></div><button class="btn sec full" onclick="toggleDone('${t.id}')">${t.status==='완료'?'진행 중으로 되돌리기':'출장 완료 처리'}</button>`:''}</div>`;
+}
+function saveTrip(id){
+ const v=k=>$(k).value.trim();if(!v('#tfTitle'))return toast('출장명을 입력하세요');
+ const t=id?db.trips[id]:{id:uid(),staff:cfg.name,status:'진행 중',entries:[],createdAt:Date.now()};
+ Object.assign(t,{type:v('#tfType'),title:v('#tfTitle'),dest:v('#tfDest'),start:v('#tfStart'),end:v('#tfEnd'),purpose:v('#tfPurpose'),goals:v('#tfGoals'),currency:v('#tfCur').toUpperCase(),rate:v('#tfRate')});
+ markDirty(t);toast('저장했습니다');location.replace('#/trip/'+t.id);
+}
+function toggleDone(id){const t=db.trips[id];t.status=t.status==='완료'?'진행 중':'완료';markDirty(t);location.replace('#/trip/'+id)}
+
+/* ===== 출장 상세 (날짜별 기록) ===== */
+function entryHtml(t,e){
+ const T=TYPES[e.type];let kv='';
+ for(const f of T.fields){if(f.k===T.title||(e.type==='expense'&&f.k==='amt'))continue;const v=fieldTxt(t,f,e.f[f.k]);if(v!==''&&v!=null)kv+=`<div class="kv"><b>${esc(f.l)}:</b> ${esc(v)}</div>`}
+ const ph=(e.photos||[]).length?`<div class="thumbs">${e.photos.map(p=>photoHtml(p)).join('')}</div>`:'';
+ const click=canEdit(t)?`onclick="location.hash='#/trip/${t.id}/edit/${e.id}'"`:'';
+ return `<div class="card entry" ${click}><div class="row"><span class="badge b-${e.type}">${T.label}</span><span class="sub">${esc(e.time||'')}</span></div>
+ <div style="font-weight:700;margin-top:6px">${esc(e.type==='expense'?(e.f.cat+' '+moneyTxt(t,e.f.amt)):entryTitle(e))}</div>${kv}${ph}</div>`;
+}
+function renderTrip(t){
+ const own=canEdit(t);setHead(t.title,true,['보고서',()=>location.hash='#/trip/'+t.id+'/report']);updSync();
+ const s=tripStats(t);
+ let h=`<div class="card"><div class="row"><span class="badge ${t.status==='완료'?'b-done':'b-live'}">${t.status==='완료'?'완료':'진행 중'}</span><span class="badge">${esc(t.type)}</span><span class="sp"></span><span class="sub">${ago(t.updatedAt)} 업데이트</span></div>
+ <div class="sub" style="margin-top:6px">${esc(t.staff)} · ${esc(t.dest)} · ${esc(t.start)} ~ ${esc(t.end)}${curOf(t)?' · 1 '+esc(curOf(t))+' = '+esc(t.rate)+'원':''}</div>
+ ${t.purpose?`<div class="kv" style="margin-top:6px;font-size:14px">${esc(t.purpose)}</div>`:''}
+ <div class="stats"><div><b>${s.n}</b><span>기록</span></div><div><b>${won(s.exp)}</b><span>경비</span></div><div><b>${won(s.order)}</b><span>수주 예상</span></div></div>
+ ${own?`<div style="height:10px"></div><button class="btn ghost full" onclick="location.hash='#/trip/${t.id}/info'">출장 정보 수정 · 완료 처리</button>`:''}</div>`;
+ const by={};for(const e of t.entries||[])(by[e.date]=by[e.date]||[]).push(e);
+ const days=Object.keys(by).sort().reverse();
+ if(!days.length)h+=`<div class="empty">${own?'아래 버튼으로 첫 기록을 남겨 보세요.':'아직 기록이 없습니다.'}</div>`;
+ for(const d of days){h+=`<div class="day">${dayLabel(d)}</div>`;for(const e of by[d].sort((a,b)=>String(b.time).localeCompare(String(a.time))))h+=entryHtml(t,e)}
+ $('#app').innerHTML=h+(own?`<button class="fab" onclick="location.hash='#/trip/${t.id}/new'">+ 기록</button>`:'');hydrate();
+}
+function renderTypePick(t){
+ if(!canEdit(t))return renderTrip(t);setHead('무엇을 기록할까요?',true);
+ $('#app').innerHTML=`<div class="types">${Object.entries(TYPES).map(([k,T])=>`<button onclick="location.replace('#/trip/${t.id}/new/${k}')">${T.label}</button>`).join('')}</div>`;
+}
+
+/* ===== 기록 입력 ===== */
+function fieldHtml(t,f,v){
+ const id='f_'+f.k;const L=`<label for="${id}">${esc(f.l)}${f.req?' *':''}</label>`;
+ if(f.t==='ta')return L+`<textarea id="${id}">${esc(v)}</textarea>`;
+ if(f.t==='sel')return L+`<select id="${id}"><option value=""></option>${f.o.map(o=>`<option ${o===v?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+ if(f.t==='chk')return `<div class="chk"><input type="checkbox" id="${id}" ${v?'checked':''}><label for="${id}" style="margin:0;font-size:15px;color:var(--ink)">${esc(f.l)}</label></div>`;
+ if(f.t==='num')return L+`<input id="${id}" inputmode="numeric" value="${esc(v)}">`;
+ if(f.t==='date')return L+`<input id="${id}" type="date" value="${esc(v)}">`;
+ if(f.t==='money'){const c=curOf(t);const m=v||{v:'',c:c||'KRW'};return L+`<div class="money"><input id="${id}" inputmode="decimal" value="${esc(m.v)}"><select id="${id}_c"><option ${m.c==='KRW'?'selected':''}>KRW</option>${c?`<option ${m.c===c?'selected':''}>${esc(c)}</option>`:''}</select></div>`}
+ return L+`<input id="${id}" value="${esc(v)}">`;
+}
+function renderEntryForm(t,e,type){
+ if(!canEdit(t))return renderTrip(t);
+ if(!e&&!TYPES[type]){location.replace('#/trip/'+t.id);return}
+ type=e?e.type:type;const T=TYPES[type];
+ const defDate=(today()>=t.start&&today()<=t.end)?today():t.start||today();
+ formState={tripId:t.id,id:e?e.id:null,type,photos:e?JSON.parse(JSON.stringify(e.photos||[])):[]};
+ setHead(T.label+(e?' 수정':' 기록'),true);
+ const f=e?e.f:{};
+ $('#app').innerHTML=`<div class="card"><div class="grid2"><div><label>날짜</label><input id="enDate" type="date" value="${esc(e?e.date:defDate)}"></div><div><label>시간</label><input id="enTime" type="time" value="${esc(e?e.time:nowTime())}"></div></div>
+ ${T.fields.map(x=>fieldHtml(t,x,f[x.k])).join('')}
+ <label>사진${type==='expense'?' (영수증)':''}</label><div class="thumbs" id="enPh"></div>
+ <div style="height:8px"></div><label class="btn sec" style="display:inline-block;color:var(--pri);margin:0">사진 추가<input type="file" accept="image/*" multiple style="display:none" onchange="addPhotos(this)"></label>
+ <div style="height:18px"></div><button class="btn full" onclick="saveEntry()">저장</button>
+ ${e?`<div style="height:8px"></div><button class="btn del full" onclick="delEntry()">이 기록 삭제</button>`:''}</div>`;
+ drawFormPhotos();
+}
+function drawFormPhotos(){$('#enPh').innerHTML=formState.photos.map(p=>photoHtml(p,true)).join('');hydrate()}
+async function addPhotos(inp){for(const f of inp.files){try{formState.photos.push({id:uid(),tmp:await compress(f)})}catch(e){toast('사진을 읽지 못했습니다')}}inp.value='';drawFormPhotos()}
+function rmPhoto(id){formState.photos=formState.photos.filter(p=>p.id!==id);drawFormPhotos()}
+async function saveEntry(){
+ const t=db.trips[formState.tripId],T=TYPES[formState.type],f={};
+ for(const x of T.fields){const el=$('#f_'+x.k);
+  if(x.t==='chk')f[x.k]=el.checked;
+  else if(x.t==='money'){const v=el.value.replace(/,/g,'').trim();f[x.k]=v===''?null:{v:num(v),c:$('#f_'+x.k+'_c').value}}
+  else f[x.k]=el.value.trim();
+  if(x.req&&(f[x.k]===''||f[x.k]==null))return toast(x.l+' 항목을 입력하세요')}
+ const photos=[];
+ for(const p of formState.photos){if(p.tmp){try{await idb.put({id:p.id,tripId:t.id,data:p.tmp})}catch(e){toast('사진 저장 실패');continue}photos.push({id:p.id})}else photos.push(p)}
+ const old=(t.entries||[]).find(x=>x.id===formState.id);
+ if(old)for(const p of old.photos||[])if(!p.fid&&!photos.some(q=>q.id===p.id))idb.del(p.id).catch(()=>{});
+ const e={id:formState.id||uid(),type:formState.type,date:$('#enDate').value||today(),time:$('#enTime').value,f,photos,createdAt:old?old.createdAt:Date.now()};
+ t.entries=(t.entries||[]).filter(x=>x.id!==e.id);t.entries.push(e);
+ formState=null;markDirty(t);toast('저장했습니다');location.replace('#/trip/'+t.id);
+}
+function delEntry(){if(!confirm('이 기록을 삭제할까요?'))return;const t=db.trips[formState.tripId];
+ const old=t.entries.find(x=>x.id===formState.id);for(const p of (old&&old.photos)||[])if(!p.fid)idb.del(p.id).catch(()=>{});
+ t.entries=t.entries.filter(x=>x.id!==formState.id);formState=null;markDirty(t);location.replace('#/trip/'+t.id)}
+
+/* ===== 보고서 자동 생성 ===== */
+function tbl(head,rows,numCols){if(!rows.length)return '<p class="sub">기록 없음</p>';numCols=numCols||[];
+ return `<div class="tblwrap"><table><tr>${head.map(x=>`<th>${esc(x)}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map((c,i)=>`<td class="${numCols.includes(i)?'num':''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</table></div>`}
+function renderReport(t){
+ setHead('보고서',true,['인쇄',()=>window.print()]);
+ const E=(t.entries||[]).slice().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+ const of=k=>E.filter(e=>e.type===k);const F=(e,k)=>{const fd=TYPES[e.type].fields.find(x=>x.k===k);return fieldTxt(t,fd,e.f[k])};
+ const s=tripStats(t);
+ const goals=String(t.goals||'').split('\n').map(x=>x.trim()).filter(Boolean);
+ const byDay={};for(const e of E)(byDay[e.date]=byDay[e.date]||[]).push(`[${TYPES[e.type].label}] `+(e.type==='expense'?e.f.cat:entryTitle(e)));
+ const cats={};let expTot=0;for(const e of of('expense')){const k=toKRW(t,e.f.amt);cats[e.f.cat]=(cats[e.f.cat]||0)+k;expTot+=k}
+ const sales=of('sales');let qTot=0,oTot=0;for(const e of sales){qTot+=toKRW(t,e.f.quote);oTot+=toKRW(t,e.f.order)}
+ const notes=k=>of('note').filter(e=>e.f.kind===k);
+ const photos=E.flatMap(e=>(e.photos||[]).filter(p=>p.fid));
+ $('#app').innerHTML=`<div class="card rep">
+ <div class="big">${esc(t.title)} 출장 결과보고</div><div class="sub">자동 생성 · ${today()}</div>
+ <h2>1. 출장 개요</h2>${tbl(['항목','내용'],[['출장자',t.staff],['구분',t.type],['지역 / 국가·도시',t.dest],['기간',t.start+' ~ '+t.end],['목적',t.purpose||'']].concat(curOf(t)?[['적용 환율','1 '+curOf(t)+' = '+t.rate+'원']]:[]))}
+ <h3>사전 목표</h3>${tbl(['번호','목표','달성 여부'],goals.map((g,i)=>[i+1,g,'']))}
+ <h3>일정</h3>${tbl(['날짜','활동'],Object.keys(byDay).sort().map(d=>[dayLabel(d),byDay[d].join('\n')]))}
+ <h2>2. 방문 내용</h2>
+ <h3>업체 방문</h3>${tbl(['업체','담당자','주력 제품','논의·합의','미결 사항','가능성'],of('visit').map(e=>[e.f.company,F(e,'contact'),F(e,'product'),F(e,'talk'),F(e,'open'),F(e,'chance')]))}
+ <h3>영업 상담</h3>${tbl(['고객사','신규','상담 내용','견적','수주 예상','가능성','다음 조치'],sales.map(e=>[e.f.company,e.f.isNew?'신규':'',F(e,'talk'),F(e,'quote'),F(e,'order'),F(e,'chance'),F(e,'next')]))}
+ ${sales.length?`<p class="sub">상담 ${sales.length}건 · 신규 거래처 ${s.newc}곳 · 견적 합계 ${won(qTot)} · 수주 예상 합계 ${won(oTot)}</p>`:''}
+ <h3>기계·부품 조사</h3>${tbl(['품목','제조사·모델','사양','가격','납기','A/S','적용 공정','우선순위'],of('item').map(e=>[e.f.name,F(e,'maker'),F(e,'spec'),F(e,'price'),F(e,'lead'),F(e,'as'),F(e,'process'),F(e,'prio')]))}
+ <h3>전시회</h3>${tbl(['전시회','경쟁사·가격대','신기술','응용 아이디어','명함'],of('expo').map(e=>[e.f.name,F(e,'comp'),F(e,'tech'),F(e,'idea'),F(e,'cards')]))}
+ <h2>3. 경비</h2>${tbl(['분류','금액 (원)'],Object.entries(cats).map(([k,v])=>[k,won(v)]).concat(expTot?[['합계',won(expTot)]]:[]),[1])}
+ <h3>경비 상세</h3>${tbl(['날짜','분류','내용','금액','결제'],of('expense').map(e=>[e.date,e.f.cat,F(e,'memo'),F(e,'amt'),F(e,'pay')]))}
+ <h2>4. 배운 점 · 후속 조치</h2>
+ <h3>배운 점</h3>${tbl(['날짜','내용'],notes('배운 점').map(e=>[e.date,e.f.body]))}
+ <h3>후속 조치</h3>${tbl(['할 일','담당자','기한'],notes('후속 조치').map(e=>[e.f.body,F(e,'owner'),F(e,'due')]).concat(of('sales').filter(e=>e.f.next).map(e=>[e.f.company+': '+e.f.next,t.staff,''])))}
+ <h3>메모</h3>${tbl(['날짜','내용'],notes('메모').map(e=>[e.date,e.f.body]))}
+ ${photos.length?`<h2>현장 사진</h2><div class="thumbs">${photos.map(p=>photoHtml(p)).join('')}</div>`:''}
+ <p class="sub" style="margin-top:20px">경제성 분석(회수 기간)과 3·6·12개월 사후 효과 추적은 출장 결과보고서 양식 문서에서 이어서 작성합니다.</p></div>`;
+}
+
+/* ===== 시작 ===== */
+route();sync();
+/* 오프라인 실행: 웹 주소(https)로 열었을 때만 동작 */
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+/* 기기 저장 공간이 브라우저 정리로 지워지지 않도록 요청 */
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+</script>
+</body>
+</html>
